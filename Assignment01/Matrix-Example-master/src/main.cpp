@@ -1,3 +1,5 @@
+#define GLM_FORCE_RADIANS
+
 #include <GL/glew.h> // glew must be included before the main gl libs
 #include <GL/glut.h> // doing otherwise causes compiler shouting
 #include <iostream>
@@ -41,6 +43,7 @@ void render();
 void update();
 void reshape(int n_w, int n_h);
 void keyboard(unsigned char key, int x_pos, int y_pos);
+void myMouse(int button, int state, int x, int y);
 
 //--Resource management
 bool initialize();
@@ -76,6 +79,7 @@ int main(int argc, char **argv)
     glutReshapeFunc(reshape);// Called if the window is resized
     glutIdleFunc(update);// Called if there is nothing else to do
     glutKeyboardFunc(keyboard);// Called if there is keyboard input
+    glutMouseFunc(myMouse); //Called if the right mouse button is clicked
 
     // Initialize all of our resources(shaders, geometry)
     bool init = initialize();
@@ -397,4 +401,11 @@ float getDT()
     ret = std::chrono::duration_cast< std::chrono::duration<float> >(t2-t1).count();
     t1 = std::chrono::high_resolution_clock::now();
     return ret;
+}
+
+//function to exit program with right mouse click
+void myMouse(int button, int state, int x, int y)
+{
+if(button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
+exit(0);
 }
