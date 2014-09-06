@@ -2,8 +2,11 @@ A simple example of matrix use in OpenGL
 ========================================
 
 *>press r key or left mouse to reverse rotation*
+
 *>press t to reverse translation*
+
 *>press  esc, q, or right mouse to exit*
+
 *>stretching window is functional*
 
 
