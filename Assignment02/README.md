@@ -1,7 +1,7 @@
 A simple example of matrix use in OpenGL
 ========================================
 
-<<<<<<< HEAD
+
 Program will ask for vertex and fragment shader filenames, for this assignment the corresponding files are vertex.txt and fragment.txt
 
 Input Controls
