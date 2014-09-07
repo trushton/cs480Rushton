@@ -1,6 +1,22 @@
 A simple example of matrix use in OpenGL
 ========================================
 
+Program will ask for vertex and fragment shader filenames, for this assignment the corresponding files are vertex.txt and fragment.txt
+
+Input Controls
+--------------
+
+*bring up menu options using right click*
+
+*press 'r' or left click to reverse rotation*
+
+*press 't' or middle click to reverse translation*
+
+*press 'q' or select 'Quit' from menu to quit*
+
+*screen stretching is functional*
+
+
 Building This Example
 ---------------------
 

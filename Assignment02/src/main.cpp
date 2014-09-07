@@ -33,7 +33,6 @@ struct interact{
 		trans ^= 0b1;
 	}
 	
-
 };
 
 
@@ -65,6 +64,7 @@ void update();
 void reshape(int n_w, int n_h);
 void keyboard(unsigned char key, int x_pos, int y_pos);
 void mouseClick(int button, int state, int x, int y);
+void menuOptions(int id);
 
 //--Resource management
 bool initialize();
@@ -100,7 +100,12 @@ int main(int argc, char **argv)
     glutReshapeFunc(reshape);// Called if the window is resized
     glutIdleFunc(update);// Called if there is nothing else to do
     glutKeyboardFunc(keyboard);// Called if there is keyboard input
-    glutMouseFunc(mouseClick); //Called if the right mouse button is clicked
+    glutMouseFunc(mouseClick); //Called if a mouse button is clicked
+    glutCreateMenu(menuOptions);
+	glutAddMenuEntry("Quit", 1);
+	glutAddMenuEntry("Start Spinning", 2);
+	glutAddMenuEntry("Stop Spinning", 3);
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
     // Initialize all of our resources(shaders, geometry)
     bool init = initialize();
@@ -215,6 +220,7 @@ void keyboard(unsigned char key, int x_pos, int y_pos)
 		case 'T':
 			kb_press.revTrans();
 			break;
+			
     }
     
 
@@ -450,12 +456,27 @@ float getDT()
 //function to exit program with right mouse click
 void mouseClick(int button, int state, int x, int y){
 	switch (button){
-		case GLUT_RIGHT_BUTTON :
-			exit(0);
-			break;
 		case GLUT_LEFT_BUTTON : 
-			kb_press.revRot();
+			if(state == GLUT_DOWN){kb_press.revRot();}
+			break;
+		case GLUT_MIDDLE_BUTTON :
+			if(state == GLUT_DOWN){kb_press.revTrans();}
 			break;
 		}
+}
+
+void menuOptions(int id){
+	switch(id){
+		case 1:
+			exit(0);
+			break;
+		case 2:
+			glutIdleFunc(update);
+			break;
+		case 3:
+			glutIdleFunc(NULL);
+			break;
+	}
+	glutPostRedisplay();
 }
 
