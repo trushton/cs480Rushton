@@ -274,16 +274,12 @@ bool initialize()
     // Note the added uniform!
     //prompt user for shader filenames
     std::ifstream in;
-    std::string vFile, fFile, vContents, fContents;
-    std::cout<< " Enter vertex shader filename : ";
-    std::cin >> vFile;
-    std::cout<< " Enter fragment shader filename : ";
-    std::cin >> fFile;
+    std::string vContents, fContents;
     
     //vertex shader first
     //open and make sure file is good
     in.clear();
-    in.open(vFile.c_str());
+    in.open("vertex.txt");
     if(!in.good()){ std::cerr << "FAILED TO OPEN VERTEX SHADER FILE" << std::endl; }
     
     //if file is good, read contents into a string
@@ -305,7 +301,7 @@ bool initialize()
 	//repeat for fragment shader
 	//open and make sure file is good
 	in.clear();
-	in.open(fFile.c_str());
+	in.open("fragment.txt");
 	if(!in.good()){ std::cerr << "FAILED TO OPEN FRAGMENT SHADER FILE" << std::endl; }
     
     //if file is good, read contents into a string

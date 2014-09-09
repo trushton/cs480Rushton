@@ -18,11 +18,10 @@ struct Vertex
     GLfloat color[3];
 };
 
+	
 struct interact{
 	bool rot = true, trans = true;
-	int rotSpeed = 1, transSpeed = 1;
-	
-	
+
 	
 	// reverse rotation function
 	void revRot(){
@@ -65,6 +64,7 @@ void update();
 void reshape(int n_w, int n_h);
 void keyboard(unsigned char key, int x_pos, int y_pos);
 void mouseClick(int button, int state, int x, int y);
+void menuOptions(int id);
 
 //--Resource management
 bool initialize();
@@ -100,7 +100,12 @@ int main(int argc, char **argv)
     glutReshapeFunc(reshape);// Called if the window is resized
     glutIdleFunc(update);// Called if there is nothing else to do
     glutKeyboardFunc(keyboard);// Called if there is keyboard input
-    glutMouseFunc(mouseClick); //Called if the right mouse button is clicked
+    glutMouseFunc(mouseClick); //Called if a mouse button is clicked
+    glutCreateMenu(menuOptions);
+	glutAddMenuEntry("Quit", 1);
+	glutAddMenuEntry("Start Spinning", 2);
+	glutAddMenuEntry("Stop Spinning", 3);
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
     // Initialize all of our resources(shaders, geometry)
     bool init = initialize();
@@ -170,16 +175,16 @@ void update()
     float dt = getDT();// if you have anything moving, use dt.
     
     //interaction to reverse translation
-    if(kb_press.trans){ transAngle += dt * M_PI/2; }//move through 90 degrees a second
-	else if(!kb_press.trans){ transAngle -= dt* M_PI/2; }
+    if(kb_press.trans){ transAngle += (dt * M_PI/2); }//move through 90 degrees a second
+	else if(!kb_press.trans){ transAngle -= (dt* M_PI/2); }
 	
 	//interaction to reverse rotation
-    if(kb_press.rot){ rotAngle += dt * M_PI/2; }//move through 90 degrees a second
-    else if(!kb_press.rot){ rotAngle -= dt * M_PI/2; }
+    if(kb_press.rot){ rotAngle += (dt * M_PI/2); }//move through 90 degrees a second
+    else if(!kb_press.rot){ rotAngle -= (dt * M_PI/2); }
 
     
-    model = (glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(transAngle), 0.0, 4.0 * cos(transAngle)))));    
-    model = (glm::rotate(model, kb_press.rotSpeed*(4.f*rotAngle), glm::vec3(0.0, 1.0, 0.0)));
+    model = (glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(transAngle), 0.0, 4.0 * cos(transAngle))));    
+    model = (glm::rotate(model, (4.f*rotAngle), glm::vec3(0.0, 1.0, 0.0)));
     
     // Update the state of the scene
     glutPostRedisplay();//call the display callback
@@ -195,29 +200,6 @@ void reshape(GLsizei w, GLsizei h)
 windowWidth = w;
 windowHeight = h;
 glViewport(0, 0, windowWidth, windowHeight);
-}
-
-
-void keyboard(unsigned char key, int x_pos, int y_pos)
-{
-    // Handle keyboard input
-    switch (key){
-		case 27:
-		case 'q':
-		case 'Q':
-			exit(0);
-			break;
-		case 'r':
-		case 'R':
-			kb_press.revRot();
-			break;
-		case 't':
-		case 'T':
-			kb_press.revTrans();
-			break;
-    }
-    
-
 }
 
 bool initialize()
@@ -292,16 +274,12 @@ bool initialize()
     // Note the added uniform!
     //prompt user for shader filenames
     std::ifstream in;
-    std::string vFile, fFile, vContents, fContents;
-    std::cout<< " Enter vertex shader filename : ";
-    std::cin >> vFile;
-    std::cout<< " Enter fragment shader filename : ";
-    std::cin >> fFile;
+
     
     //vertex shader first
     //open and make sure file is good
     in.clear();
-    in.open(vFile.c_str());
+    in.open("vertex.txt");
     if(!in.good()){ std::cerr << "FAILED TO OPEN VERTEX SHADER FILE" << std::endl; }
     
     //if file is good, read contents into a string
@@ -323,7 +301,7 @@ bool initialize()
 	//repeat for fragment shader
 	//open and make sure file is good
 	in.clear();
-	in.open(fFile.c_str());
+	in.open("fragment.txt");
 	if(!in.good()){ std::cerr << "FAILED TO OPEN FRAGMENT SHADER FILE" << std::endl; }
     
     //if file is good, read contents into a string
@@ -447,9 +425,68 @@ float getDT()
     return ret;
 }
 
-//function to exit program with right mouse click
+//handles mouse input
 void mouseClick(int button, int state, int x, int y){
-	if(button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
-exit(0);
+	switch (button){
+		case GLUT_LEFT_BUTTON : 
+			if(state == GLUT_DOWN){kb_press.revRot();}
+			break;
+		case GLUT_MIDDLE_BUTTON :
+			if(state == GLUT_DOWN){kb_press.revTrans();}
+			break;
+		}
 }
 
+void menuOptions(int id){
+	float dt = getDT();// makes the spinning restart from stopping position
+	switch(id){
+		case 1:
+			cleanUp();
+			exit(0);
+			break;
+		case 2:
+			// allows for rotation and translation while spinning is paused
+			
+			static float transAngle = 0.0, rotAngle = 0.0;
+			//interaction to reverse translation
+			if(kb_press.trans){ transAngle += (dt * M_PI/2); }//move through 90 degrees a second
+			else if(!kb_press.trans){ transAngle -= (dt* M_PI/2); }
+	
+			//interaction to reverse rotation
+			if(kb_press.rot){ rotAngle += (dt * M_PI/2); }//move through 90 degrees a second
+			else if(!kb_press.rot){ rotAngle -= (dt * M_PI/2); }
+    
+			model = (glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(transAngle), 0.0, 4.0 * cos(transAngle))));    
+			model = (glm::rotate(model, (4.f*rotAngle), glm::vec3(0.0, 1.0, 0.0)));
+			glutIdleFunc(update);
+			break;
+		case 3:
+			glutIdleFunc(NULL);
+			break;
+	}
+	glutPostRedisplay();
+}
+
+void keyboard(unsigned char key, int x_pos, int y_pos)
+{
+    // Handle keyboard input
+    switch (key){
+		case 27:
+		case 'q':
+		case 'Q':
+			cleanUp();
+			exit(0);
+			break;
+		case 'r':
+		case 'R':
+			kb_press.revRot();
+			break;
+		case 't':
+		case 'T':
+			kb_press.revTrans();
+			break;
+			
+    }
+    
+
+}
