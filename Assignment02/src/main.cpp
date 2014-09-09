@@ -202,30 +202,6 @@ windowHeight = h;
 glViewport(0, 0, windowWidth, windowHeight);
 }
 
-
-void keyboard(unsigned char key, int x_pos, int y_pos)
-{
-    // Handle keyboard input
-    switch (key){
-		case 27:
-		case 'q':
-		case 'Q':
-			exit(0);
-			break;
-		case 'r':
-		case 'R':
-			kb_press.revRot();
-			break;
-		case 't':
-		case 'T':
-			kb_press.revTrans();
-			break;
-			
-    }
-    
-
-}
-
 bool initialize()
 {
     // Initialize basic geometry and shaders for this example
@@ -453,7 +429,7 @@ float getDT()
     return ret;
 }
 
-//function to exit program with right mouse click
+//handles mouse input
 void mouseClick(int button, int state, int x, int y){
 	switch (button){
 		case GLUT_LEFT_BUTTON : 
@@ -466,11 +442,26 @@ void mouseClick(int button, int state, int x, int y){
 }
 
 void menuOptions(int id){
+	float dt = getDT();// makes the spinning restart from stopping position
 	switch(id){
 		case 1:
+			cleanUp();
 			exit(0);
 			break;
 		case 2:
+			// allows for rotation and translation while spinning is paused
+			
+			static float transAngle = 0.0, rotAngle = 0.0;
+			//interaction to reverse translation
+			if(kb_press.trans){ transAngle += (dt * M_PI/2); }//move through 90 degrees a second
+			else if(!kb_press.trans){ transAngle -= (dt* M_PI/2); }
+	
+			//interaction to reverse rotation
+			if(kb_press.rot){ rotAngle += (dt * M_PI/2); }//move through 90 degrees a second
+			else if(!kb_press.rot){ rotAngle -= (dt * M_PI/2); }
+    
+			model = (glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(transAngle), 0.0, 4.0 * cos(transAngle))));    
+			model = (glm::rotate(model, (4.f*rotAngle), glm::vec3(0.0, 1.0, 0.0)));
 			glutIdleFunc(update);
 			break;
 		case 3:
@@ -480,3 +471,26 @@ void menuOptions(int id){
 	glutPostRedisplay();
 }
 
+void keyboard(unsigned char key, int x_pos, int y_pos)
+{
+    // Handle keyboard input
+    switch (key){
+		case 27:
+		case 'q':
+		case 'Q':
+			cleanUp();
+			exit(0);
+			break;
+		case 'r':
+		case 'R':
+			kb_press.revRot();
+			break;
+		case 't':
+		case 'T':
+			kb_press.revTrans();
+			break;
+			
+    }
+    
+
+}
