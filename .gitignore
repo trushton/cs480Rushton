@@ -19,3 +19,8 @@
 *.exe
 *.out
 *.app
+
+# Backups
+*.cpp~
+*.h~
+*.txt~
