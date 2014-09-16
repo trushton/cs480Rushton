@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include "shader.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -303,55 +304,13 @@ bool initialize()
     GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 
     //Shader Sources
-    // Put these into files and write a loader in the future
-    // Note the added uniform!
-    //prompt user for shader filenames
-    std::ifstream in;
-    std::string vContents, fContents;
+    shader shaderFiles;
     
-    //vertex shader first
-    //open and make sure file is good
-    in.clear();
-    in.open("vertex.txt");
-    if(!in.good()){ std::cerr << "FAILED TO OPEN VERTEX SHADER FILE" << std::endl; }
-    
-    //if file is good, read contents into a string
-    while(in.good()){ vContents += in.get(); }
-    
-    //close file once done
-    in.close();
-    
-    //convert string to char*
-    int vLen = vContents.length() -1;
-    char* vs_temp = new char[vContents.length()];
-    for(int x=0; x < vLen; x++){
-		vs_temp[x] = vContents[x];
-	}
-	
-	//store shader as const char* 
-	const char* vs = vs_temp;
-	
-	//repeat for fragment shader
-	//open and make sure file is good
-	in.clear();
-	in.open("fragment.txt");
-	if(!in.good()){ std::cerr << "FAILED TO OPEN FRAGMENT SHADER FILE" << std::endl; }
-    
-    //if file is good, read contents into a string
-    while(in.good()){ fContents += in.get(); }
-    
-    //close file once done
-    in.close();
-    
-    //convert string to char*
-    int fLen = fContents.length()-1;
-    char* fs_temp = new char[fContents.length()];
-    for(int x=0; x < fLen; x++){
-		fs_temp[x] = fContents[x];
-	}
-	
-	//store shader as const char*
-	const char* fs = fs_temp;
+    shaderFiles.readVertex();
+    shaderFiles.readFragment();
+ 
+    const char* vs = shaderFiles.getVertex();
+    const char* fs = shaderFiles.getFragment();
 
 
 
