@@ -206,8 +206,8 @@ void update()
 	else if(!kb_press.trans){ earthTransAngle -= (dt* M_PI/2); }
 	
 	//interaction for reversing moon rotation
-	if(kb_press.trans){ moonTransAngle += (dt * M_PI); }//move through 90 degrees a second
-	else if(!kb_press.trans){ moonTransAngle -= (dt* M_PI); }
+	if(kb_press.trans){ moonTransAngle -= (dt * M_PI); }//move through 90 degrees a second
+	else if(!kb_press.trans){ moonTransAngle += (dt* M_PI); }
 	
 	//interaction to reverse rotation
     if(kb_press.rot){ rotAngle += (dt * M_PI/2); }//move through 90 degrees a second
