@@ -471,27 +471,14 @@ void mouseClick(int button, int state, int x, int y){
 }
 
 void menuOptions(int id){
-	float dt = getDT();// makes the spinning restart from stopping position
+	getDT();// makes the spinning restart from stopping position
 	switch(id){
 		case 1:
 			cleanUp();
 			exit(0);
 			break;
 		case 2:
-			// allows for rotation and translation while spinning is paused
-			
-			static float transAngle = 0.0, rotAngle = 0.0;
-			//interaction to reverse translation
-			if(kb_press.trans){ transAngle += (dt * M_PI/2); }//move through 90 degrees a second
-			else if(!kb_press.trans){ transAngle -= (dt* M_PI/2); }
-	
-			//interaction to reverse rotation
-			if(kb_press.rot){ rotAngle += (dt * M_PI/2); }//move through 90 degrees a second
-			else if(!kb_press.rot){ rotAngle -= (dt * M_PI/2); }
-    
-			earthModel = (glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(transAngle), 0.0, 4.0 * cos(transAngle))));    
-			earthModel = (glm::rotate(earthModel, (4.f*rotAngle), glm::vec3(0.0, 1.0, 0.0)));
-			glutIdleFunc(update);
+					glutIdleFunc(update);
 			break;
 		case 3:
 			glutIdleFunc(NULL);
