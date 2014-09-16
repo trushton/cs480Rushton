@@ -7,8 +7,10 @@ Input Controls
 *bring up menu options using right click*
 
 *press 'r' or left click to reverse rotation*
+>moon rotation not affected
 
 *press 't' or middle click to reverse translation*
+>moon translation reverses with earth translation
 
 *press 'q' or select 'Quit' from menu to quit*
 
