@@ -4,8 +4,10 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
-#include "shader.h"
 #include <vector>
+#include "shader.h"
+#include "objloader.h"
+
 
 
 #include <glm/glm.hpp>
@@ -13,30 +15,9 @@
 #include <glm/gtc/type_ptr.hpp> //Makes passing matrices to shaders easier
 
 
-//--Data types
-//This object will define the attributes of a vertex(position, color, etc...)
-struct Vertex
-{
-    GLfloat position[3];
-    GLfloat color[3];
-};
 
 
-/*struct interact{
-	bool rot = true, trans = true;
 
-
-	// reverse rotation function
-	void revRot(){
-		rot ^= 0b1;
-	}
-
-	//reverse translation function
-	void revTrans(){
-		trans ^= 0b1;
-	}
-
-};*/
 
 
 //--Evil Global variables
@@ -45,8 +26,8 @@ int w = 640, h = 480;// Window size
 GLint windowHeight, windowWidth;
 GLuint program;// The GLSL program handle
 GLuint vbo_geometry;// VBO handle for our geometry
-// create an interactable struct for key presses
-//interact kb_press;
+int numFaces;
+
 
 //uniform locations
 GLint loc_mvpmat;// Location of the modelviewprojection matrix in the shader
@@ -61,19 +42,15 @@ glm::mat4 moonModel;
 glm::mat4 view;//world->eye
 glm::mat4 projection;//eye->clip
 glm::mat4 model;//premultiplied modelviewprojection
-//glm::mat4 moonMvp;
+
 
 //--GLUT Callbacks
 void render();
 void update();
 void reshape(int n_w, int n_h);
-/*void keyboard(unsigned char key, int x_pos, int y_pos);
-void mouseClick(int button, int state, int x, int y);
-void menuOptions(int id);*/
+
 
 //--Resource management
-bool loadOBJ( const char *path, std::vector<glm::vec3> &out_vertices,
-          std::vector<glm::vec2> &out_uvs, std::vector<glm::vec3> &out_normals);
 bool initialize();
 void cleanUp();
 
@@ -106,13 +83,6 @@ int main(int argc, char **argv)
     glutDisplayFunc(render);// Called when its time to display
     glutReshapeFunc(reshape);// Called if the window is resized
     glutIdleFunc(update);// Called if there is nothing else to do
-    //glutKeyboardFunc(keyboard);// Called if there is keyboard input
-    /*glutMouseFunc(mouseClick); //Called if a mouse button is clicked
-    glutCreateMenu(menuOptions);
-	  glutAddMenuEntry("Quit", 1);
-    glutAddMenuEntry("Start Spinning", 2);
-    glutAddMenuEntry("Stop Spinning", 3);
-	  glutAttachMenu(GLUT_RIGHT_BUTTON);*/
 
     // Initialize all of our resources(shaders, geometry)
     bool init = initialize();
@@ -133,7 +103,7 @@ void render()
     //--Render the scene
 
     //clear the screen
-    glClearColor(0.0, 0.0, 0.2, 1.0);
+    glClearColor(0.0, 0.5, 0.8, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //premultiply the matrix for this example
@@ -155,42 +125,19 @@ void render()
                            3,//number of elements
                            GL_FLOAT,//type
                            GL_FALSE,//normalized?
-                           sizeof(Vertex),//stride
+                           sizeof(glm::vec3)*2,//stride
                            0);//offset
 
     glVertexAttribPointer( loc_color,
                            3,
                            GL_FLOAT,
                            GL_FALSE,
-                           sizeof(Vertex),
-                           (void*)offsetof(Vertex,color));
+                           sizeof(glm::vec3)*2,
+                           (void*)sizeof(glm::vec3));
 
-    glDrawArrays(GL_TRIANGLES, 0, 1000);//mode, starting index, count
+    glDrawArrays(GL_TRIANGLES, 0, numFaces*3);//mode, starting index, count
 
-    //upload the matrix to the shader MOON
-    /*glUniformMatrix4fv(loc_mvpmat, 1, GL_FALSE, glm::value_ptr(moonMvp));
 
-    //set up the Vertex Buffer Object so it can be drawn
-    glEnableVertexAttribArray(loc_position);
-    glEnableVertexAttribArray(loc_color);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
-    //set pointers into the vbo for each of the attributes(position and color)
-    glVertexAttribPointer( loc_position,//location of attribute
-                           3,//number of elements
-                           GL_FLOAT,//type
-                           GL_FALSE,//normalized?
-                           sizeof(Vertex),//stride
-                           0);//offset
-
-    glVertexAttribPointer( loc_color,
-                           3,
-                           GL_FLOAT,
-                           GL_FALSE,
-                           sizeof(Vertex),
-                           (void*)offsetof(Vertex,color));
-
-    glDrawArrays(GL_TRIANGLES, 0, 36);//mode, starting index, count
-    */
     //clean up
     glDisableVertexAttribArray(loc_position);
     glDisableVertexAttribArray(loc_color);
@@ -201,30 +148,10 @@ void render()
 
 void update()
 {
-    //total time
-  /*  static float earthTransAngle = 0.0, moonTransAngle = 0.0, rotAngle = 0.0, moonRot;
-
-    float dt = getDT();// if you have anything moving, use dt.
-
-    //interaction to reverse translation
-    if(kb_press.trans){ earthTransAngle += (dt * M_PI/2); }//move through 90 degrees a second
-	else if(!kb_press.trans){ earthTransAngle -= (dt* M_PI/2); }
-
-	//interaction for reversing moon rotation
-	if(kb_press.trans){ moonTransAngle -= (dt * M_PI); }//move through 90 degrees a second
-	else if(!kb_press.trans){ moonTransAngle += (dt* M_PI); }
-
-	//interaction to reverse rotation
-    if(kb_press.rot){ rotAngle += (dt * M_PI/2); }//move through 90 degrees a second
-    else if(!kb_press.rot){ rotAngle -= (dt * M_PI/2); }
-
-	moonRot += (dt * M_PI);
-
-    earthModel = (glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(earthTransAngle), 0.0, 4.0 * cos(earthTransAngle))));
-    moonModel = glm::translate( earthModel, glm::vec3(4.0 * sin(moonTransAngle), 0.0, 4.0 * cos(moonTransAngle))) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)); ;
-    earthModel = (glm::rotate(earthModel, (4.f*rotAngle), glm::vec3(0.0, 1.0, 0.0)));
-    moonModel = glm::rotate(moonModel, (2.f*moonRot), glm::vec3(0.0, 1.0, 0.0));*/
-    // Update the state of the scene
+    static float rotation = 0.0;
+    float dt = getDT();
+    rotation += dt * M_PI /2;
+    model = glm::rotate(model, 4.f*rotation, glm::vec3(0.0,1.0,0.0));
     glutPostRedisplay();//call the display callback
 }
 
@@ -242,69 +169,18 @@ glViewport(0, 0, windowWidth, windowHeight);
 
 bool initialize()
 {
-    // Initialize basic geometry and shaders for this example
+   
+    std::vector< Vertex > vertices;
+    std::vector< Vertex > uvs;
+    std::vector< Vertex > normals; // Won't be used at the moment.
 
-    //this defines a cube, this is why a model loader is nice
-    //you can also do this with a draw elements and indices, try to get that working
-    /*Vertex geometry[] = { {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{-1.0, -1.0, 1.0}, {0.0, 0.0, 1.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
-
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
-
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-                          {{-1.0, -1.0, 1.0}, {0.0, 0.0, 1.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-                          {{-1.0, -1.0, 1.0}, {0.0, 0.0, 1.0}},
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
-
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}}
-                        };*/
-    std::vector< glm::vec3 > vertices;
-    std::vector< glm::vec2 > uvs;
-    std::vector< glm::vec3 > normals; // Won't be used at the moment.
-
-    bool res = loadOBJ("table2.obj", vertices, uvs, normals);
-    if(!res){ std::cerr << "failed to load object"; }
+    numFaces = loadOBJ("table2.obj", vertices, uvs, normals);
+    if(!numFaces){ std::cerr << "failed to load object"; }
 
     // Create a Vertex Buffer object to store this vertex info on the GPU
     glGenBuffers(1, &vbo_geometry);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
 
     //--Geometry done
@@ -312,66 +188,16 @@ bool initialize()
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 
-    /*//Shader Sources
-    shader shaderFiles;
-
-    shaderFiles.readVertex();
-    shaderFiles.readFragment();
-
-    const char* vs = shaderFiles.getVertex();
-    const char* fs = shaderFiles.getFragment();*/
     //Shader Sources
-    // Put these into files and write a loader in the future
-    // Note the added uniform!
-    //prompt user for shader filenames
-    std::ifstream in;
-    std::string vContents, fContents;
+    shader v,f;
+    v.readIn("vertex.txt");
+    f.readIn("fragment.txt");
+    
+    const char* vs = v.get();
+    const char* fs = f.get();
 
-    //vertex shader first
-    //open and make sure file is good
-    in.clear();
-    in.open("vertex.txt");
-    if(!in.good()){ std::cerr << "FAILED TO OPEN VERTEX SHADER FILE" << std::endl; }
-
-    //if file is good, read contents into a string
-    while(in.good()){ vContents += in.get(); }
-
-    //close file once done
-    in.close();
-
-    //convert string to char*
-    int vLen = vContents.length() -1;
-    char* vs_temp = new char[vContents.length()];
-    for(int x=0; x < vLen; x++){
-		vs_temp[x] = vContents[x];
-	}
-
-	//store shader as const char*
-	const char* vs = vs_temp;
-
-	//repeat for fragment shader
-	//open and make sure file is good
-	in.clear();
-	in.open("fragment.txt");
-	if(!in.good()){ std::cerr << "FAILED TO OPEN FRAGMENT SHADER FILE" << std::endl; }
-
-    //if file is good, read contents into a string
-    while(in.good()){ fContents += in.get(); }
-
-    //close file once done
-    in.close();
-
-    //convert string to char*
-    int fLen = fContents.length()-1;
-    char* fs_temp = new char[fContents.length()];
-    for(int x=0; x < fLen; x++){
-		fs_temp[x] = fContents[x];
-	}
-
-	//store shader as const char*
-	const char* fs = fs_temp;
-
-
+    /*const char* fs = "varying vec3 color; void main(void){ gl_FragColor = vec4(color.rgb, 1.0); }";
+    const char* vs = "attribute vec3 v_position; attribute vec3 v_color; varying vec3 color; uniform mat4 mvpMatrix; void main(void){ gl_Position = mvpMatrix * vec4(v_position, 1.0); color = v_color; }";*/
 
     //compile the shaders
     GLint shader_status;
@@ -476,125 +302,5 @@ float getDT()
     return ret;
 }
 
-//handles mouse input
-/*void mouseClick(int button, int state, int x, int y){
-	switch (button){
-		case GLUT_LEFT_BUTTON :
-			if(state == GLUT_DOWN){kb_press.revRot();}
-			break;
-		case GLUT_MIDDLE_BUTTON :
-			if(state == GLUT_DOWN){kb_press.revTrans();}
-			break;
-		}
-}*/
-
-/*void menuOptions(int id){
-	getDT();// makes the spinning restart from stopping position
-	switch(id){
-		case 1:
-			cleanUp();
-			exit(0);
-			break;
-		case 2:
-					glutIdleFunc(update);
-			break;
-		case 3:
-			glutIdleFunc(NULL);
-			break;
-	}
-	glutPostRedisplay();
-}*/
-
-/*void keyboard(unsigned char key, int x_pos, int y_pos)
-{
-    // Handle keyboard input
-    switch (key){
-		case 27:
-		case 'q':
-		case 'Q':
-			cleanUp();
-			exit(0);
-			break;
-		case 'r':
-		case 'R':
-			kb_press.revRot();
-			break;
-		case 't':
-		case 'T':
-			kb_press.revTrans();
-			break;
-
-    }
 
 
-}*/
-
-bool loadOBJ( const char *path, std::vector<glm::vec3> &out_vertices,
-          std::vector<glm::vec2> &out_uvs, std::vector<glm::vec3> &out_normals){
-
-std::vector< unsigned int > vertexIndices, uvIndices, normalIndices;
-std::vector< glm::vec3 > temp_vertices;
-std::vector< glm::vec2 > temp_uvs;
-std::vector< glm::vec3 > temp_normals;
-
-FILE * file = fopen(path, "r");
-if( file == NULL ){
-  printf("Impossible to open the file !\n");
-  return false;
-}
-
-while( 1 ){
-
-char lineHeader[128];
-// read the first word of the line
-int res = fscanf(file, "%s", lineHeader);
-if (res == EOF)
-    break; // EOF = End Of File. Quit the loop.
-
-else {
-  if ( strcmp( lineHeader, "v" ) == 0 ){
-    glm::vec3 vertex;
-    fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
-    temp_vertices.push_back(vertex);
-
-  }else if ( strcmp( lineHeader, "vt" ) == 0 ){
-    glm::vec2 uv;
-    fscanf(file, "%f %f\n", &uv.x, &uv.y );
-    temp_uvs.push_back(uv);
-
-  }else if ( strcmp( lineHeader, "vn" ) == 0 ){
-    glm::vec3 normal;
-    fscanf(file, "%f %f %f\n", &normal.x, &normal.y, &normal.z );
-
-    temp_normals.push_back(normal);
-
-  }else if ( strcmp( lineHeader, "f" ) == 0 ){
-    std::string vertex1, vertex2, vertex3;
-    unsigned int vertexIndex[3], uvIndex[3], normalIndex[3];
-    int matches = fscanf(file, "%d//%d %d//%d %d//%d\n", &vertexIndex[0], &uvIndex[0], &normalIndex[0], &vertexIndex[1], &uvIndex[1], &normalIndex[1]/*, &vertexIndex[2], &uvIndex[2], &normalIndex[2]*/ );
-      if (matches != 6){
-        printf("File can't be read by our simple parser : ( Try exporting with other options\n");
-        return false;
-      }
-
-    vertexIndices.push_back(vertexIndex[0]);
-    vertexIndices.push_back(vertexIndex[1]);
-    //vertexIndices.push_back(vertexIndex[2]);
-    uvIndices    .push_back(uvIndex[0]);
-    uvIndices    .push_back(uvIndex[1]);
-    //uvIndices    .push_back(uvIndex[2]);
-    normalIndices.push_back(normalIndex[0]);
-    normalIndices.push_back(normalIndex[1]);
-    //normalIndices.push_back(normalIndex[2]);
-    }
-  }
-}
-// For each vertex of each triangle
-  for( unsigned int i=0; i<vertexIndices.size(); i++ ){
-    unsigned int vertexIndex = vertexIndices[i];
-    glm::vec3 vertex = temp_vertices[ vertexIndex-1 ];
-    out_vertices.push_back(vertex);
-    }
-
-  return true;
-}
