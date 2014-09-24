@@ -23,7 +23,7 @@ int loadOBJ(const char * path,  std::vector<Vertex> & out_vertices,
 
 	FILE * file = fopen(path, "r");
 	if( file == NULL ){
-		printf("Impossible to open the file ! Are you in the right path ? See Tutorial 1 for details\n");
+		printf("Can't open file\n");
 		getchar();
 		return 0;
 	}
