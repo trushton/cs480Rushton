@@ -4,8 +4,11 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <assimp/Importer.hpp> //includes the importer, which is used to read our obj file
+#include <assimp/scene.h> //includes the aiScene object
+#include <assimp/postprocess.h> //includes the postprocessing variables for the importer
+#include <assimp/color4.h> //includes the aiColor4 object, which is used to handle the colors from the mesh objects
 #include "shader.h"
-#include "loader.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -169,65 +172,63 @@ glViewport(0, 0, windowWidth, windowHeight);
 
 bool initialize()
 {
-    // Initialize basic geometry and shaders for this example
+    std::string fileName = "table2.obj";
+    Assimp::Importer importer;
+    std::vector<unsigned int> indices;
+    std::vector<float> vertices;
+    std::vector<float> uv;
+    std::vector<float> normals;
 
-    //this defines a cube, this is why a model loader is nice
-    //you can also do this with a draw elements and indices, try to get that working
-    Vertex geometry[] = { {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{-1.0, -1.0, 1.0}, {0.0, 0.0, 1.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
+    const aiScene *scene = importer.ReadFile(fileName.c_str() ,aiProcess_Triangulate);
 
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
+    if(!scene){ // make sure file was read
+      printf("Error parsing '%s': '%s'\n", fileName.c_str(), importer.GetErrorString());
+    }
 
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
+    //initialize the mesh in scene
+    const aiMesh* mesh = scene->mMeshes[0];
 
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
+    int numFaces = mesh->mNumFaces;
+    int numIndices = numFaces*3;
+    indices.resize(numIndices);
 
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
 
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-                          {{-1.0, -1.0, 1.0}, {0.0, 0.0, 1.0}},
-                          {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
+    for(unsigned int i = 0; i < mesh->mNumFaces; i++){
+      const aiFace& face = mesh->mFaces[i];
+      assert(face.mNumIndices == 3);
+      indices[i*3+0] = face.mIndices[0];
+      indices[i*3+1] = face.mIndices[1];
+      indices[i*3+2] = face.mIndices[2];
+    }
 
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-                          {{-1.0, -1.0, 1.0}, {0.0, 0.0, 1.0}},
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
+    int numVertices = mesh->mNumVertices;
+    vertices.resize(numVertices*3);
+    normals.resize(numVertices*3);
+    uv.resize(numVertices*2);
 
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-
-                          {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
-
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-
-                          {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
-                          {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
-                          {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}}
-                        };
+    for(unsigned int i = 0; i < mesh->mNumVertices; i++){
+      if(mesh->HasPositions()){
+        vertices[i*3+0] = mesh->mVertices[i].x;
+        vertices[i*3+1] = mesh->mVertices[i].y;
+        vertices[i*3+2] = mesh->mVertices[i].z;
+      }
+      if(mesh->HasNormals()){
+        normals[i*3+0] = mesh->mNormals[i].x;
+        normals[i*3+1] = mesh->mNormals[i].x;
+        normals[i*3+2] = mesh->mNormals[i].x;
+      }
+      if(mesh->HasTextureCoords(0)){
+        uv[i*2+0] = mesh->mTextureCoords[0][i].x;
+        uv[i*2+1] = mesh->mTextureCoords[0][i].y;
+      }
+    }
 
 
 
     // Create a Vertex Buffer object to store this vertex info on the GPU
     glGenBuffers(1, &vbo_geometry);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(geometry), geometry, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
 
     //--Geometry done
 
