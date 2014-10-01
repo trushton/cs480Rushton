@@ -10,9 +10,13 @@ LIBS= -L/usr/lib/nvidia-331 -lglut -lGLEW -lGL -lassimp
 # Compiler flags
 CXXFLAGS= -g -Wall -std=c++0x
 
-all: ../bin/Matrix 
+all: ../bin/Matrix
 
-../bin/Matrix: ../src/main.cpp
-	$(CC) $(CXXFLAGS) ../src/main.cpp -o ../bin/Matrix $(LIBS)
+../bin/main.o: ../src/main.cpp
+	$(CC) $(CXXFLAGS) ../src/main.cpp -c $(LIBS)
 
-clean: *.o ../bin/Matrix
+../bin/Matrix: ../bin/main.o
+	$(CC) $(CXXFLAGS) -o ../bin/Matrix main.o  $(LIBS)
+
+clean:
+	rm  *.o ../bin/Matrix

@@ -8,7 +8,6 @@
 #include <assimp/scene.h> //includes the aiScene object
 #include <assimp/postprocess.h> //includes the postprocessing variables for the importer
 #include <assimp/color4.h> //includes the aiColor4 object, which is used to handle the colors from the mesh objects
-#include "shader.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -28,9 +27,14 @@ struct Vertex
 //--Evil Global variables
 //Just for this example!
 int w = 640, h = 480;// Window size
+int numFaces;
+std::vector<unsigned int> indices;
 GLint windowHeight, windowWidth;
 GLuint program;// The GLSL program handle
 GLuint vbo_geometry;// VBO handle for our geometry
+GLuint elementBuffer;
+GLuint uvBuffer;
+GLuint normalBuffer;
 
 
 //uniform locations
@@ -109,7 +113,7 @@ void render()
     //--Render the scene
 
     //clear the screen
-    glClearColor(0.0, 0.0, 0.2, 1.0);
+    glClearColor(1.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //premultiply the matrix for this example
@@ -121,31 +125,25 @@ void render()
     //upload the matrix to the shader
     glUniformMatrix4fv(loc_mvpmat, 1, GL_FALSE, glm::value_ptr(Mvp));
 
-    //set up the Vertex Buffer Object so it can be drawn
-    glEnableVertexAttribArray(loc_position);
-    glEnableVertexAttribArray(loc_color);
+
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
-    //set pointers into the vbo for each of the attributes(position and color)
-    glVertexAttribPointer( loc_position,//location of attribute
-                           3,//number of elements
-                           GL_FLOAT,//type
-                           GL_FALSE,//normalized?
-                           sizeof(Vertex),//stride
-                           0);//offset
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    glVertexAttribPointer( loc_color,
-                           3,
-                           GL_FLOAT,
-                           GL_FALSE,
-                           sizeof(Vertex),
-                           (void*)offsetof(Vertex,color));
+    glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-    glDrawArrays(GL_TRIANGLES, 0, 36);//mode, starting index, count
+    glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*)0);
 
-    //clean up
-    glDisableVertexAttribArray(loc_position);
-    glDisableVertexAttribArray(loc_color);
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glDisableVertexAttribArray(2);
 
     //swap the buffers
     glutSwapBuffers();
@@ -172,9 +170,8 @@ glViewport(0, 0, windowWidth, windowHeight);
 
 bool initialize()
 {
-    std::string fileName = "table2.obj";
+    std::string fileName = "dragon.obj";
     Assimp::Importer importer;
-    std::vector<unsigned int> indices;
     std::vector<float> vertices;
     std::vector<float> uv;
     std::vector<float> normals;
@@ -188,10 +185,9 @@ bool initialize()
     //initialize the mesh in scene
     const aiMesh* mesh = scene->mMeshes[0];
 
-    int numFaces = mesh->mNumFaces;
+    numFaces = mesh->mNumFaces;
     int numIndices = numFaces*3;
     indices.resize(numIndices);
-
 
     for(unsigned int i = 0; i < mesh->mNumFaces; i++){
       const aiFace& face = mesh->mFaces[i];
@@ -211,24 +207,44 @@ bool initialize()
         vertices[i*3+0] = mesh->mVertices[i].x;
         vertices[i*3+1] = mesh->mVertices[i].y;
         vertices[i*3+2] = mesh->mVertices[i].z;
+
       }
       if(mesh->HasNormals()){
         normals[i*3+0] = mesh->mNormals[i].x;
-        normals[i*3+1] = mesh->mNormals[i].x;
-        normals[i*3+2] = mesh->mNormals[i].x;
+        normals[i*3+1] = mesh->mNormals[i].y;
+        normals[i*3+2] = mesh->mNormals[i].z;
       }
       if(mesh->HasTextureCoords(0)){
         uv[i*2+0] = mesh->mTextureCoords[0][i].x;
         uv[i*2+1] = mesh->mTextureCoords[0][i].y;
       }
+      else{
+        uv[i*2+0] = 0.1;
+        uv[i*2+1] = 0.8;
+      }
     }
 
 
 
+    //create index buffer object
+    glGenBuffers(1, &elementBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+
     // Create a Vertex Buffer object to store this vertex info on the GPU
     glGenBuffers(1, &vbo_geometry);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(aiVector3D), &vertices[0], GL_STATIC_DRAW);
+
+    // create uv buffer object
+    glGenBuffers(1, &uvBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
+    glBufferData(GL_ARRAY_BUFFER, uv.size() * sizeof(aiVector2D), &uv[0], GL_STATIC_DRAW);
+
+    // create normal buffer object
+    glGenBuffers(1, &normalBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(aiVector3D), &normals[0], GL_STATIC_DRAW);
 
     //--Geometry done
 
@@ -236,14 +252,22 @@ bool initialize()
     GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 
     //Shader Sources
-    shader shaderFiles;
+    std::ifstream in("fragment.txt");
+    std::string content( (std::istreambuf_iterator<char>(in) ),
+      std::istreambuf_iterator<char>() );
 
-    shaderFiles.readVertex();
-    shaderFiles.readFragment();
+    const char *fs = content.c_str();
 
-    const char* vs = shaderFiles.getVertex();
-    const char* fs = shaderFiles.getFragment();
+    std::ifstream in2("vertex.txt");
+    std::string content2( (std::istreambuf_iterator<char>(in2) ),
+      std::istreambuf_iterator<char>() );
 
+    const char *vs = content2.c_str();
+
+
+    /*const char* fs = "varying vec3 color; void main(void){ gl_FragColor = vec4(color.rgb, 1.0); }";
+    const char* vs = "attribute vec3 v_position; attribute vec3 v_color; varying vec3 color; uniform mat4 mvpMatrix; void main(void){ gl_Position = mvpMatrix * vec4(v_position, 1.0); color = v_color; }";
+*/
 
 
     //compile the shaders
@@ -335,8 +359,11 @@ bool initialize()
 void cleanUp()
 {
     // Clean up, Clean up
-    glDeleteProgram(program);
-    glDeleteBuffers(1, &vbo_geometry);
+  glDeleteProgram(program);
+  glDeleteBuffers(1, &vbo_geometry);
+  glDeleteBuffers(1, &uvBuffer);
+  glDeleteBuffers(1, &normalBuffer);
+
 }
 
 //returns the time delta
