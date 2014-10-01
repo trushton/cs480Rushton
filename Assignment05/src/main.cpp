@@ -75,7 +75,7 @@ int main(int argc, char **argv)
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(w, h);
     // Name and create the Window
-    glutCreateWindow("Matrix Example");
+    glutCreateWindow("Assimp Model Loading Example");
 
     // Now that the window is created the GL context is fully set up
     // Because of that we can now initialize GLEW to prepare work with shaders
