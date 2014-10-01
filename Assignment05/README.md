@@ -1,20 +1,12 @@
-Assignment03 Moons
+Assignment05 Assimp Model Loading
 ========================================
 
-Input Controls
---------------
+*implemented glDrawElements for extra credit
+>line 142 in main.cpp
 
-*bring up menu options using right click*
+*default color set
 
-*press 'r' or left click to reverse rotation*
->moon rotation not affected
-
-*press 't' or middle click to reverse translation*
->moon translation reverses with earth translation
-
-*press 'q' or select 'Quit' from menu to quit*
-
-*screen stretching is functional*
+*currently loading dragon.obj, other obj files in bin
 
 
 
@@ -29,7 +21,7 @@ Building This Example
 *On a Mac you can install GLM with this command(using homebrew)*
 >$ brew install glm
 
-To build this example just 
+To build this example just
 
 >$ cd build
 >$ make
