@@ -40,8 +40,8 @@ GLuint normalBuffer;
 
 
 // image global variables
-GLuint m_textureObj;
-Magick::Image* m_pImage;
+GLuint textureID;
+Magick::Image* texture;
 Magick::Blob m_blob;
 
 //uniform locations
@@ -133,6 +133,11 @@ void render()
     //upload the matrix to the shader
     glUniformMatrix4fv(loc_mvpmat, 1, GL_FALSE, glm::value_ptr(Mvp));
 
+    glActiveTexture(GL_TEXTURE0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->columns(), texture->rows(), -0.5, GL_RGBA, GL_UNSIGNED_BYTE, m_blob.data());
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	  glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glUniform1i(loc_sampler, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
     glEnableVertexAttribArray(0);
@@ -145,13 +150,6 @@ void render()
     glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
-    glActiveTexture(GL_TEXTURE0);
-    glUniform1i(loc_sampler, 0);
-    glBindTexture(GL_ELEMENT_ARRAY_BUFFER, m_textureObj);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_pImage->columns(), m_pImage->rows(), 0, GL_RGB, GL_UNSIGNED_BYTE, m_blob.data());
-    glTexParameteri(GL_ARRAY_BUFFER, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_ARRAY_BUFFER, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*)0);
@@ -208,18 +206,6 @@ bool initialize()
     const aiMesh* mesh = scene->mMeshes[0];
 
     //load texture image
-    std::string m_fileName;
-
-
-        try {
-        m_pImage = new Magick::Image("./capsule0.jpg");
-        m_pImage->write(&m_blob, "RGBA");
-
-    }
-    catch (Magick::Error& Error) {
-        std::cout << "Error loading texture '" << "capsule0.jpg" << "': " << Error.what() << std::endl;
-        return false;
-    }
 
 
     numFaces = mesh->mNumFaces;
@@ -279,12 +265,6 @@ bool initialize()
     glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(aiVector3D), &normals[0], GL_STATIC_DRAW);
 
-    glGenTextures(1, &m_textureObj);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_ELEMENT_ARRAY_BUFFER, m_textureObj);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_pImage->columns(), m_pImage->rows(), 0, GL_RGB, GL_UNSIGNED_BYTE, m_blob.data());
-    glTexParameterf(GL_ARRAY_BUFFER, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_ARRAY_BUFFER, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     //--Geometry done
 
@@ -374,6 +354,30 @@ return false;
         return false;
     }
 
+    glGenTextures(1, &textureID);
+
+        try {
+        texture = new Magick::Image("./capsule0.jpg");
+        texture->write(&m_blob, "RGBA");
+
+    }
+    catch (Magick::Error& Error) {
+        std::cout << "Error loading texture '" << "capsule0.jpg" << "': " << Error.what() << std::endl;
+        return false;
+    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->columns(), texture->rows(), -0.5, GL_RGBA, GL_UNSIGNED_BYTE, m_blob.data());
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    loc_sampler = glGetUniformLocation(program,
+                    const_cast<const char*>("gSampler"));
+    if(loc_sampler == -1)
+    {
+        std::cerr << "[F] SAMPLER NOT FOUND" << std::endl;
+        return false;
+    }
+
     loc_tex = glGetAttribLocation(program,
                     const_cast<const char*>("v_tex"));
     if(loc_tex == -1)
@@ -390,13 +394,7 @@ return false;
         return false;
     }
 
-    loc_sampler = glGetUniformLocation(program,
-                    const_cast<const char*>("gSampler"));
-    if(loc_sampler == -1)
-    {
-        std::cerr << "[F] SAMPLER NOT FOUND" << std::endl;
-        return false;
-    }
+
 
     //--Init the view and projection matrices
     //  if you will be having a moving camera the view matrix will need to more dynamic
@@ -426,6 +424,7 @@ void cleanUp()
   glDeleteBuffers(1, &vbo_geometry);
   glDeleteBuffers(1, &uvBuffer);
   glDeleteBuffers(1, &normalBuffer);
+
 
 }
 
