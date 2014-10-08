@@ -39,12 +39,18 @@ GLuint uvBuffer;
 GLuint normalBuffer;
 
 
+// image global variables
+GLuint m_textureObj;
+Magick::Image* m_pImage;
+Magick::Blob m_blob;
+
 //uniform locations
 GLint loc_mvpmat;// Location of the modelviewprojection matrix in the shader
 
 //attribute locations
 GLint loc_position;
 GLint loc_tex;
+GLint loc_sampler;
 
 //transform matrices
 glm::mat4 Model;//obj->world each object should have its own model matrix
@@ -140,6 +146,13 @@ void render()
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
+    glActiveTexture(GL_TEXTURE0);
+    glUniform1i(loc_sampler, 0);
+    glBindTexture(GL_ELEMENT_ARRAY_BUFFER, m_textureObj);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_pImage->columns(), m_pImage->rows(), 0, GL_RGB, GL_UNSIGNED_BYTE, m_blob.data());
+    glTexParameteri(GL_ARRAY_BUFFER, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_ARRAY_BUFFER, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*)0);
 
@@ -197,13 +210,11 @@ bool initialize()
     //load texture image
     std::string m_fileName;
 
-    GLuint m_textureObj;
-    Magick::Image* m_pImage;
-    Magick::Blob m_blob;
 
         try {
         m_pImage = new Magick::Image("./capsule0.jpg");
         m_pImage->write(&m_blob, "RGBA");
+
     }
     catch (Magick::Error& Error) {
         std::cout << "Error loading texture '" << "capsule0.jpg" << "': " << Error.what() << std::endl;
@@ -268,10 +279,10 @@ bool initialize()
     glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(aiVector3D), &normals[0], GL_STATIC_DRAW);
 
-    glActiveTexture(GL_TEXTURE0);
     glGenTextures(1, &m_textureObj);
-    glBindTexture(GL_ARRAY_BUFFER, m_textureObj);
-    glTexImage2D(GL_ARRAY_BUFFER, 0, GL_RGB, m_pImage->columns(), m_pImage->rows(), -0.5, GL_RGBA, GL_UNSIGNED_BYTE, m_blob.data());
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_ELEMENT_ARRAY_BUFFER, m_textureObj);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_pImage->columns(), m_pImage->rows(), 0, GL_RGB, GL_UNSIGNED_BYTE, m_blob.data());
     glTexParameterf(GL_ARRAY_BUFFER, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameterf(GL_ARRAY_BUFFER, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -376,6 +387,14 @@ return false;
     if(loc_mvpmat == -1)
     {
         std::cerr << "[F] MVPMATRIX NOT FOUND" << std::endl;
+        return false;
+    }
+
+    loc_sampler = glGetUniformLocation(program,
+                    const_cast<const char*>("gSampler"));
+    if(loc_sampler == -1)
+    {
+        std::cerr << "[F] SAMPLER NOT FOUND" << std::endl;
         return false;
     }
 

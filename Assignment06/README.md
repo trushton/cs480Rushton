@@ -1,12 +1,7 @@
-Assignment05 Assimp Model Loading
+Assignment06 Assimp texture Loading
 ========================================
 
-*implemented glDrawElements for extra credit
->line 142 in main.cpp
-
-*default color set
-
-*currently loading dragon.obj, other obj files in bin
+*using imageMagick++ to load images
 
 
 

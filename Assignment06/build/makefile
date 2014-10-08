@@ -16,14 +16,10 @@ all: ../bin/Model
 ../bin/main.o: ../src/main.cpp
 	$(CC) $(CXXFLAGS) ../src/main.cpp -c $(LIBS)
 
-../bin/texture.o: ../src/texture.cpp
-	$(CC) $(CXXFLAGS) ../src/texture.cpp -c $(LIBS)
 
-../bin/mesh.o: ../src/mesh.cpp
-	$(CC) $(CXXFLAGS) ../src/mesh.cpp -c $(LIBS)
 
-../bin/Model: ../bin/main.o ../bin/mesh.o ../bin/texture.o
-	$(CC) $(CXXFLAGS) -o ../bin/Model main.o mesh.o texture.o  $(LIBS)
+../bin/Model: ../bin/main.o
+	$(CC) $(CXXFLAGS) -o ../bin/Model main.o   $(LIBS)
 
 clean:
 	rm -f *.o ../bin/Matrix
