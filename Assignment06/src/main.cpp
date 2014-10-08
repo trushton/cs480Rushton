@@ -8,6 +8,8 @@
 #include <assimp/scene.h> //includes the aiScene object
 #include <assimp/postprocess.h> //includes the postprocessing variables for the importer
 #include <assimp/color4.h> //includes the aiColor4 object, which is used to handle the colors from the mesh objects
+#include <ImageMagick/Magick++.h>
+
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -19,7 +21,7 @@
 struct Vertex
 {
     GLfloat position[3];
-    GLfloat color[3];
+    GLfloat uv[2];
 };
 
 
@@ -42,7 +44,7 @@ GLint loc_mvpmat;// Location of the modelviewprojection matrix in the shader
 
 //attribute locations
 GLint loc_position;
-GLint loc_color;
+GLint loc_tex;
 
 //transform matrices
 glm::mat4 Model;//obj->world each object should have its own model matrix
@@ -113,7 +115,7 @@ void render()
     //--Render the scene
 
     //clear the screen
-    glClearColor(1.0, 0.0, 0.0, 1.0);
+    glClearColor(1.0, 1.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //premultiply the matrix for this example
@@ -151,7 +153,14 @@ void render()
 
 void update()
 {
+    static float angle = 0.0;
+    float dt = getDT();// if you have anything moving, use dt.
 
+    angle += dt * M_PI/2; //move through 90 degrees a second
+
+
+    Model = (glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(angle), 0.0, 4.0 * cos(angle))));
+    Model = (glm::rotate(Model, (4.f*angle), glm::vec3(0.0, 1.0, 0.0)));
     // Update the state of the scene
     glutPostRedisplay();//call the display callback
 }
@@ -170,7 +179,7 @@ glViewport(0, 0, windowWidth, windowHeight);
 
 bool initialize()
 {
-    std::string fileName = "table2.obj";
+    std::string fileName = "capsule.obj";
     Assimp::Importer importer;
     std::vector<float> vertices;
     std::vector<float> uv;
@@ -184,6 +193,23 @@ bool initialize()
 
     //initialize the mesh in scene
     const aiMesh* mesh = scene->mMeshes[0];
+
+    //load texture image
+    std::string m_fileName;
+
+    GLuint m_textureObj;
+    Magick::Image* m_pImage;
+    Magick::Blob m_blob;
+
+        try {
+        m_pImage = new Magick::Image("./capsule0.jpg");
+        m_pImage->write(&m_blob, "RGBA");
+    }
+    catch (Magick::Error& Error) {
+        std::cout << "Error loading texture '" << "capsule0.jpg" << "': " << Error.what() << std::endl;
+        return false;
+    }
+
 
     numFaces = mesh->mNumFaces;
     int numIndices = numFaces*3;
@@ -222,7 +248,6 @@ bool initialize()
     }
 
 
-
     //create index buffer object
     glGenBuffers(1, &elementBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
@@ -243,19 +268,26 @@ bool initialize()
     glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
     glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(aiVector3D), &normals[0], GL_STATIC_DRAW);
 
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &m_textureObj);
+    glBindTexture(GL_ARRAY_BUFFER, m_textureObj);
+    glTexImage2D(GL_ARRAY_BUFFER, 0, GL_RGB, m_pImage->columns(), m_pImage->rows(), -0.5, GL_RGBA, GL_UNSIGNED_BYTE, m_blob.data());
+    glTexParameterf(GL_ARRAY_BUFFER, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_ARRAY_BUFFER, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
     //--Geometry done
 
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 
     //Shader Sources
-    std::ifstream in("fragment.txt");
+    std::ifstream in("fragment.glsl");
     std::string content( (std::istreambuf_iterator<char>(in) ),
       std::istreambuf_iterator<char>() );
 
     const char *fs = content.c_str();
 
-    std::ifstream in2("vertex.txt");
+    std::ifstream in2("vertex.glsl");
     std::string content2( (std::istreambuf_iterator<char>(in2) ),
       std::istreambuf_iterator<char>() );
 
@@ -265,6 +297,7 @@ bool initialize()
     /*const char* fs = "varying vec3 color; void main(void){ gl_FragColor = vec4(color.rgb, 1.0); }";
     const char* vs = "attribute vec3 v_position; attribute vec3 v_color; varying vec3 color; uniform mat4 mvpMatrix; void main(void){ gl_Position = mvpMatrix * vec4(v_position, 1.0); color = v_color; }";
 */
+
 
 
     //compile the shaders
@@ -286,11 +319,25 @@ bool initialize()
     glCompileShader(fragment_shader);
     //check the compile status
     glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &shader_status);
+    char buffer[512]; // buffer for error
+
+if(!shader_status){
+
+glGetShaderInfoLog(fragment_shader, 512, NULL, buffer); // inserts the error into the buffer
+
+std::cerr << buffer << std::endl; // prints out error
+
+return false;
+
+}
     if(!shader_status)
     {
         std::cerr << "[F] FAILED TO COMPILE FRAGMENT SHADER!" << std::endl;
         return false;
     }
+
+
+
 
     //Now we link the 2 shader objects into a program
     //This program is what is run on the GPU
@@ -316,11 +363,11 @@ bool initialize()
         return false;
     }
 
-    loc_color = glGetAttribLocation(program,
-                    const_cast<const char*>("v_color"));
-    if(loc_color == -1)
+    loc_tex = glGetAttribLocation(program,
+                    const_cast<const char*>("v_tex"));
+    if(loc_tex == -1)
     {
-        std::cerr << "[F] V_COLOR NOT FOUND" << std::endl;
+        std::cerr << "[F] V_TEX NOT FOUND" << std::endl;
         return false;
     }
 
