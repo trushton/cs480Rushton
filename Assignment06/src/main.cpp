@@ -37,7 +37,7 @@ GLuint vbo_geometry;// VBO handle for our geometry
 GLuint elementBuffer;
 GLuint uvBuffer;
 GLuint normalBuffer;
-
+std::vector<GLuint*> vecTex;
 
 // image global variables
 GLuint textureID;
@@ -312,15 +312,16 @@ bool initialize()
     glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &shader_status);
     char buffer[512]; // buffer for error
 
-if(!shader_status){
+    //shader error printout
+    if(!shader_status){
 
-glGetShaderInfoLog(fragment_shader, 512, NULL, buffer); // inserts the error into the buffer
+    glGetShaderInfoLog(fragment_shader, 512, NULL, buffer); // inserts the error into the buffer
 
-std::cerr << buffer << std::endl; // prints out error
+    std::cerr << buffer << std::endl; // prints out error
 
-return false;
+    return false;
 
-}
+    }
     if(!shader_status)
     {
         std::cerr << "[F] FAILED TO COMPILE FRAGMENT SHADER!" << std::endl;
@@ -354,18 +355,25 @@ return false;
         return false;
     }
 
-    glGenTextures(1, &textureID);
-
+    //load texture
+    aiString Path;
+    const aiMaterial* pMaterial = scene->mMaterials[mesh->mMaterialIndex];
+    if(pMaterial->GetTextureCount(aiTextureType_DIFFUSE) >0){
+      if(pMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &Path, NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS){
         try {
-        texture = new Magick::Image("./capsule0.jpg");
+        texture = new Magick::Image(Path.C_Str());
         texture->write(&m_blob, "RGBA");
 
+        }
+      catch (Magick::Error& Error) {
+          std::cout << "Error loading texture '" << Path.C_Str() << "': " << Error.what() << std::endl;
+          return false;
+        }
+      }
     }
-    catch (Magick::Error& Error) {
-        std::cout << "Error loading texture '" << "capsule0.jpg" << "': " << Error.what() << std::endl;
-        return false;
-    }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->columns(), texture->rows(), -0.5, GL_RGBA, GL_UNSIGNED_BYTE, m_blob.data());
+
+    glGenTextures(1, &textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->columns(), texture->rows(), 0, GL_RGBA, GL_UNSIGNED_BYTE, m_blob.data());
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glBindTexture(GL_TEXTURE_2D, 0);
