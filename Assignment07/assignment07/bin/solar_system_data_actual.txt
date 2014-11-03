@@ -1,0 +1,58 @@
+# Each planet is listed with their satellites.
+# The planets information is listed by: planet name, orbit speed (days), orbit angle (degrees), diameter (km), mass (ration compared to Earth), rotation speed (days), rotation angle (degrees), distance from sun (km)
+# The satellites information is in the format: satellite name, distance from planet (km), orbit speed (days), diameter (km)
+
+mercury			88      	7.0    		4879        0.6      58.65        0.01      57900000
+0
+
+
+venus			224.70      3.4     	12104       0.82     -243.02   	  177.4    108200000
+0
+
+
+earth 			365.26      0.0     	12756       1.00     0.9971       23.4     149600000
+1
+moon			1840000      27.322  	3475 	
+
+
+mars			687      	1.9    		6792       	0.11     1.025       25.2     227900000
+2
+phobos			937800		  0.319	  	2240
+deimos			2345900		  1.262	  	1220
+
+
+jupiter 		4331.45     1.3     	142984      317.89   0.4101       3.1      778600000
+4
+callisto		1882700		  16.689		4820.6
+io				421600		  1.769			3643.2
+europa			670900		  3.551			3120.6
+ganymede		107004		  7.155			5262.4
+
+
+saturn      	10747.3	    2.5    		120536       95.17    0.426       26.7     1433500000
+4
+dione			377400		  2.74		1126
+rhea			527040		  4.518		1526
+titan			12218300	  15.95		5150
+iapetus			3561300		  79.3475	1492
+
+
+uranus 			30589 	0.8     51118        14.56    -0.7167       97.8     2872500000
+4
+ariel			191020		 	2.520 		1162
+umbriel			266300		  	4.144 		1169
+titania			435910		  	8.706 		1577
+oberon			583520		  	13.463 		1522
+
+
+neptune			59800	  1.8     49528        17.24    0.691       28.3     4495100000
+1
+triton			354760		  	5.877 		2706.8
+
+
+pluto 			90588	  17.2    2390        0.002    -6.38        122.5   5870000000
+1
+charon			19640		    6.387 		1186
+
+sun         	1         0       300000       332948.6 	24.47         0     0
+0
