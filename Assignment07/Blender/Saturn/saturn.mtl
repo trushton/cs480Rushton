@@ -1,0 +1,22 @@
+# Blender MTL File: 'saturn.blend'
+# Material Count: 2
+
+newmtl Material.001
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.005096 0.005096 0.005096
+Ks 0.002448 0.002448 0.002448
+Ni 1.000000
+d 1.000000
+illum 0
+map_Kd texture_saturn_ring.png
+
+newmtl Material.001_texture_saturn.jpg
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.005096 0.005096 0.005096
+Ks 0.002448 0.002448 0.002448
+Ni 1.000000
+d 1.000000
+illum 0
+map_Kd texture_saturn.jpg
