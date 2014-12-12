@@ -169,7 +169,7 @@ glViewport(0, 0, windowWidth, windowHeight);
 
 bool initialize()
 {
-   
+
     std::vector< Vertex > vertices;
     std::vector< Vertex > uvs;
     std::vector< Vertex > normals; // Won't be used at the moment.
@@ -183,7 +183,7 @@ bool initialize()
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
 
-    //--Geometry done
+    //--Geometry dones
 
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -192,7 +192,7 @@ bool initialize()
     shader v,f;
     v.readIn("vertex.txt");
     f.readIn("fragment.txt");
-    
+
     const char* vs = v.get();
     const char* fs = f.get();
 
@@ -301,6 +301,3 @@ float getDT()
     t1 = std::chrono::high_resolution_clock::now();
     return ret;
 }
-
-
-

@@ -369,14 +369,15 @@ bool initialize()
           std::cout << "Error loading texture '" << Path.C_Str() << "': " << Error.what() << std::endl;
           return false;
         }
+        glGenTextures(1, &textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->columns(), texture->rows(), 0, GL_RGBA, GL_UNSIGNED_BYTE, m_blob.data());
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glBindTexture(GL_TEXTURE_2D, 0);
       }
     }
 
-    glGenTextures(1, &textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->columns(), texture->rows(), 0, GL_RGBA, GL_UNSIGNED_BYTE, m_blob.data());
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
+
 
     loc_sampler = glGetUniformLocation(program,
                     const_cast<const char*>("gSampler"));

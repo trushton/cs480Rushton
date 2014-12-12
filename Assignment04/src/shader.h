@@ -9,7 +9,7 @@ class shader
 {
   public:
   void readIn(string);
-  char* get();
+  const char* get();
   private:
-  char* shader;
+  const char* shader;
 };

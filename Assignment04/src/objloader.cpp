@@ -1,3 +1,4 @@
+#define GLM_FORCE_RADIANS
 #include <vector>
 #include <stdio.h>
 #include <string>
@@ -10,13 +11,13 @@
 
 static int numFaces = 0;
 
-int loadOBJ(const char * path,  std::vector<Vertex> & out_vertices, 
+int loadOBJ(const char * path,  std::vector<Vertex> & out_vertices,
 		std::vector<Vertex> & out_uvs, std::vector<Vertex> & out_normals){
 
 	printf("Loading OBJ file %s...\n", path);
 
 	std::vector<unsigned int> vertexIndices, uvIndices, normalIndices;
-	std::vector<Vertex> temp_vertices; 
+	std::vector<Vertex> temp_vertices;
 	std::vector<Vertex> temp_uvs;
 	std::vector<Vertex> temp_normals;
 
@@ -37,7 +38,7 @@ int loadOBJ(const char * path,  std::vector<Vertex> & out_vertices,
 			break; // EOF = End Of File. Quit the loop.
 
 		//else : parse lineHeader
-		
+
 		if ( strcmp( lineHeader, "v" ) == 0 ){
 			Vertex vertex;
 			fscanf(file, "%f %f %f\n", &vertex.position[0], &vertex.position[1], &vertex.position[2] );
@@ -61,36 +62,36 @@ int loadOBJ(const char * path,  std::vector<Vertex> & out_vertices,
 			vertexIndices.push_back(vertexIndex[0]);
 			vertexIndices.push_back(vertexIndex[1]);
 			vertexIndices.push_back(vertexIndex[2]);
-			
+
 			normalIndices.push_back(normalIndex[0]);
 			normalIndices.push_back(normalIndex[1]);
-			normalIndices.push_back(normalIndex[2]);			
-			
+			normalIndices.push_back(normalIndex[2]);
+
 			//increment numFaces
 			numFaces++;
 		}
 
 	}
-	
+
 	// For each vertex of each triangle
 	for( unsigned int i=0; i<vertexIndices.size(); i++ ){
 
 		// Get the indices of its attributes
 		unsigned int vertexIndex = vertexIndices[i];
-		
+
 		unsigned int normalIndex = normalIndices[i];
-		
+
 		// Get the attributes thanks to the index
 		Vertex vertex = temp_vertices[ vertexIndex-1 ];
-		
+
 		Vertex normal = temp_normals[ normalIndex-1 ];
-		
+
 		// Put the attributes in buffers
 		out_vertices.push_back(vertex);
 		out_normals .push_back(normal);
-		
-		
-		
+
+
+
 	}
 
 	return numFaces;

@@ -8,28 +8,22 @@ void shader::readIn(string filename)
 
     std::ifstream fin;
     std::string temp;
+    std::string shaderStr = "";
 
     // open file, clear stream, read in shader to string
-
     fin.clear();
     fin.open(filename);
-    while( fin.good() )
-    {
-     temp += fin.get();
+    if(fin.is_open()){
+      while (getline(fin, temp)){
+        shaderStr += temp;
+      }
+      fin.close();
+      shader = shaderStr.c_str();
     }
-    temp += '\0';
-    // convert string into c_style string
 
-    int y = temp.length()-1;
-    shader = new char[temp.length()];
-    for(int x=0;x<y;x++)
-    {
-     shader[x] = temp[x];
-    }
-    fin.close();
 }
 
-char* shader::get()
+const char* shader::get()
 {
  return shader;
 }
