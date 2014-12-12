@@ -4,6 +4,8 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include "shader.h"
+
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -18,21 +20,21 @@ struct Vertex
     GLfloat color[3];
 };
 
-	
+
 struct interact{
 	bool rot = true, trans = true;
 
-	
+
 	// reverse rotation function
 	void revRot(){
 		rot ^= 0b1;
 	}
-	
+
 	//reverse translation function
 	void revTrans(){
 		trans ^= 0b1;
 	}
-	
+
 };
 
 
@@ -162,7 +164,7 @@ void render()
     //clean up
     glDisableVertexAttribArray(loc_position);
     glDisableVertexAttribArray(loc_color);
-                           
+
     //swap the buffers
     glutSwapBuffers();
 }
@@ -171,25 +173,25 @@ void update()
 {
     //total time
     static float transAngle = 0.0, rotAngle = 0.0;
-    
+
     float dt = getDT();// if you have anything moving, use dt.
-    
+
     //interaction to reverse translation
     if(kb_press.trans){ transAngle += (dt * M_PI/2); }//move through 90 degrees a second
 	else if(!kb_press.trans){ transAngle -= (dt* M_PI/2); }
-	
+
 	//interaction to reverse rotation
     if(kb_press.rot){ rotAngle += (dt * M_PI/2); }//move through 90 degrees a second
     else if(!kb_press.rot){ rotAngle -= (dt * M_PI/2); }
 
-    
-    model = (glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(transAngle), 0.0, 4.0 * cos(transAngle))));    
+
+    model = (glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(transAngle), 0.0, 4.0 * cos(transAngle))));
     model = (glm::rotate(model, (4.f*rotAngle), glm::vec3(0.0, 1.0, 0.0)));
-    
+
     // Update the state of the scene
     glutPostRedisplay();//call the display callback
 }
- 
+
 
 
 
@@ -215,11 +217,11 @@ bool initialize()
                           {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
                           {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
                           {{-1.0, 1.0, -1.0}, {0.0, 1.0, 0.0}},
-                          
+
                           {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
                           {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
                           {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
-                          
+
                           {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
                           {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
                           {{-1.0, -1.0, -1.0}, {0.0, 0.0, 0.0}},
@@ -235,7 +237,7 @@ bool initialize()
                           {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
                           {{-1.0, -1.0, 1.0}, {0.0, 0.0, 1.0}},
                           {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}},
-                          
+
                           {{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
                           {{1.0, -1.0, -1.0}, {1.0, 0.0, 0.0}},
                           {{1.0, 1.0, -1.0}, {1.0, 1.0, 0.0}},
@@ -256,9 +258,9 @@ bool initialize()
                           {{-1.0, 1.0, 1.0}, {0.0, 1.0, 1.0}},
                           {{1.0, -1.0, 1.0}, {1.0, 0.0, 1.0}}
                         };
-                        
 
-    
+
+
     // Create a Vertex Buffer object to store this vertex info on the GPU
     glGenBuffers(1, &vbo_geometry);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_geometry);
@@ -273,52 +275,60 @@ bool initialize()
     // Put these into files and write a loader in the future
     // Note the added uniform!
     //prompt user for shader filenames
-    std::ifstream in;
+
+    shader shaderFiles;
+
+    shaderFiles.readVertex();
+    shaderFiles.readFragment();
+
+    const char* vs = shaderFiles.getVertex();
+    const char* fs = shaderFiles.getFragment();
+    /*std::ifstream in;
     std::string vContents, fContents;
-    
+
     //vertex shader first
     //open and make sure file is good
     in.clear();
     in.open("vertex.txt");
     if(!in.good()){ std::cerr << "FAILED TO OPEN VERTEX SHADER FILE" << std::endl; }
-    
+
     //if file is good, read contents into a string
     while(in.good()){ vContents += in.get(); }
-    
+
     //close file once done
     in.close();
-    
+
     //convert string to char*
     int vLen = vContents.length() -1;
     char* vs_temp = new char[vContents.length()];
     for(int x=0; x < vLen; x++){
 		vs_temp[x] = vContents[x];
 	}
-	
-	//store shader as const char* 
+
+	//store shader as const char*
 	const char* vs = vs_temp;
-	
+
 	//repeat for fragment shader
 	//open and make sure file is good
 	in.clear();
 	in.open("fragment.txt");
 	if(!in.good()){ std::cerr << "FAILED TO OPEN FRAGMENT SHADER FILE" << std::endl; }
-    
+
     //if file is good, read contents into a string
     while(in.good()){ fContents += in.get(); }
-    
+
     //close file once done
     in.close();
-    
+
     //convert string to char*
     int fLen = fContents.length()-1;
     char* fs_temp = new char[fContents.length()];
     for(int x=0; x < fLen; x++){
 		fs_temp[x] = fContents[x];
 	}
-	
+
 	//store shader as const char*
-	const char* fs = fs_temp;
+	const char* fs = fs_temp;*/
 
 
 
@@ -386,10 +396,10 @@ bool initialize()
         std::cerr << "[F] MVPMATRIX NOT FOUND" << std::endl;
         return false;
     }
-    
+
     //--Init the view and projection matrices
     //  if you will be having a moving camera the view matrix will need to more dynamic
-    //  ...Like you should update it before you render more dynamic 
+    //  ...Like you should update it before you render more dynamic
     //  for this project having them static will be fine
     view = glm::lookAt( glm::vec3(0.0, 8.0, -16.0), //Eye Position
                         glm::vec3(0.0, 0.0, 0.0), //Focus point
@@ -398,7 +408,7 @@ bool initialize()
     projection = glm::perspective( 45.0f, //the FoV typically 90 degrees is good which is what this is set to
                                    float(w)/float(h), //Aspect Ratio, so Circles stay Circular
                                    0.01f, //Distance to the near plane, normally a small value like this
-                                   100.0f); //Distance to the far plane, 
+                                   100.0f); //Distance to the far plane,
 
     //enable depth testing
     glEnable(GL_DEPTH_TEST);
@@ -428,7 +438,7 @@ float getDT()
 //handles mouse input
 void mouseClick(int button, int state, int x, int y){
 	switch (button){
-		case GLUT_LEFT_BUTTON : 
+		case GLUT_LEFT_BUTTON :
 			if(state == GLUT_DOWN){kb_press.revRot();}
 			break;
 		case GLUT_MIDDLE_BUTTON :
@@ -446,17 +456,17 @@ void menuOptions(int id){
 			break;
 		case 2:
 			// allows for rotation and translation while spinning is paused
-			
+
 			static float transAngle = 0.0, rotAngle = 0.0;
 			//interaction to reverse translation
 			if(kb_press.trans){ transAngle += (dt * M_PI/2); }//move through 90 degrees a second
 			else if(!kb_press.trans){ transAngle -= (dt* M_PI/2); }
-	
+
 			//interaction to reverse rotation
 			if(kb_press.rot){ rotAngle += (dt * M_PI/2); }//move through 90 degrees a second
 			else if(!kb_press.rot){ rotAngle -= (dt * M_PI/2); }
-    
-			model = (glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(transAngle), 0.0, 4.0 * cos(transAngle))));    
+
+			model = (glm::translate( glm::mat4(1.0f), glm::vec3(4.0 * sin(transAngle), 0.0, 4.0 * cos(transAngle))));
 			model = (glm::rotate(model, (4.f*rotAngle), glm::vec3(0.0, 1.0, 0.0)));
 			glutIdleFunc(update);
 			break;
@@ -485,8 +495,8 @@ void keyboard(unsigned char key, int x_pos, int y_pos)
 		case 'T':
 			kb_press.revTrans();
 			break;
-			
+
     }
-    
+
 
 }

@@ -189,12 +189,13 @@ bool initialize()
     GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
 
     //Shader Sources
-    shader v,f;
-    v.readIn("vertex.txt");
-    f.readIn("fragment.txt");
+    shader shaderFiles;
 
-    const char* vs = v.get();
-    const char* fs = f.get();
+    shaderFiles.readVertex();
+    shaderFiles.readFragment();
+
+    const char* vs = shaderFiles.getVertex();
+    const char* fs = shaderFiles.getFragment();
 
     /*const char* fs = "varying vec3 color; void main(void){ gl_FragColor = vec4(color.rgb, 1.0); }";
     const char* vs = "attribute vec3 v_position; attribute vec3 v_color; varying vec3 color; uniform mat4 mvpMatrix; void main(void){ gl_Position = mvpMatrix * vec4(v_position, 1.0); color = v_color; }";*/

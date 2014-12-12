@@ -15,15 +15,11 @@ all: ../bin/Matrix
 ../bin/main.o: ../src/main.cpp
 	$(CC) $(CXXFLAGS) ../src/main.cpp -c $(LIBS)
 
-../bin/shader.o: ../src/shader.cpp
-	$(CC) $(CXXFLAGS) ../src/shader.cpp -c $(LIBS)
-
 ../bin/objloader.o: ../src/objloader.cpp
 	$(CC) $(CXXFLAGS) ../src/objloader.cpp -c $(LIBS)
 
-../bin/Matrix: ../bin/main.o ../bin/shader.o ../bin/objloader.o
-	$(CC) $(CXXFLAGS) -o ../bin/Matrix main.o shader.o objloader.o $(LIBS)
+../bin/Matrix: ../bin/main.o ../bin/objloader.o
+	$(CC) $(CXXFLAGS) -o ../bin/Matrix main.o  objloader.o $(LIBS)
 
 clean:
 	rm  *.o ../bin/Matrix
-
